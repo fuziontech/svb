@@ -472,12 +472,6 @@ class DeletableAPIResource(APIResource):
 
 
 # API objects
-class ACH(ListableAPIResource):
-    @classmethod
-    def class_url(cls):
-        return '/v1/balance/history'
-
-
 class Account(CreateableAPIResource, ListableAPIResource,
               UpdateableAPIResource, DeletableAPIResource):
     @classmethod
@@ -526,94 +520,70 @@ class Account(CreateableAPIResource, ListableAPIResource,
         return cls._modify(url, **params)
 
 
-class AlipayAccount(UpdateableAPIResource, DeletableAPIResource):
-
+class ACH(ListableAPIResource):
     @classmethod
-    def _build_instance_url(cls, customer, sid):
-        token = util.utf8(sid)
-        extn = urllib.quote_plus(token)
-        customer = util.utf8(customer)
+    def class_url(cls):
+        cls_name = cls.class_name()
+        return "/v1/%s" % (cls_name,)
 
-        base = Customer.class_url()
-        owner_extn = urllib.quote_plus(customer)
 
-        return "%s/%s/sources/%s" % (base, owner_extn, extn)
-
-    def instance_url(self):
-        return self._build_instance_url(self.customer, self.id)
-
+class Book(ListableAPIResource):
     @classmethod
-    def modify(cls, customer, id, **params):
-        url = cls._build_instance_url(customer, id)
-        return cls._modify(url, **params)
-
-    @classmethod
-    def retrieve(cls, id, api_key=None, svb_account=None, **params):
-        raise NotImplementedError(
-            "Can't retrieve an Alipay account without a customer ID. "
-            "Use customer.sources.retrieve('alipay_account_id') instead.")
+    def class_url(cls):
+        cls_name = cls.class_name()
+        return "/v1/%s" % (cls_name,)
 
 
-class Balance(SingletonAPIResource):
+class VirtualCard(ListableAPIResource):
     pass
 
 
-class BalanceTransaction(ListableAPIResource):
-
+class Wire(ListableAPIResource):
     @classmethod
     def class_url(cls):
-        return '/v1/balance/history'
+        return "/v1/wire"
 
 
-class Card(UpdateableAPIResource, DeletableAPIResource):
+# Onboarding objects
 
-    def instance_url(self):
-        token = util.utf8(self.id)
-        extn = urllib.quote_plus(token)
-        if hasattr(self, 'customer'):
-            customer = util.utf8(self.customer)
-
-            base = Customer.class_url()
-            owner_extn = urllib.quote_plus(customer)
-            class_base = "sources"
-
-        elif hasattr(self, 'recipient'):
-            recipient = util.utf8(self.recipient)
-
-            base = Recipient.class_url()
-            owner_extn = urllib.quote_plus(recipient)
-            class_base = "cards"
-
-        elif hasattr(self, 'account'):
-            account = util.utf8(self.account)
-
-            base = Account.class_url()
-            owner_extn = urllib.quote_plus(account)
-            class_base = "external_accounts"
-
-        else:
-            raise error.InvalidRequestError(
-                "Could not determine whether card_id %s is "
-                "attached to a customer, recipient, or "
-                "account." % token, 'id')
-
-        return "%s/%s/%s/%s" % (base, owner_extn, class_base, extn)
-
+class Company(ListableAPIResource):
     @classmethod
-    def modify(cls, sid, **params):
-        raise NotImplementedError(
-            "Can't modify a card without a customer, recipient or account "
-            "ID. Call save on customer.sources.retrieve('card_id'), "
-            "recipient.cards.retrieve('card_id'), or "
-            "account.external_accounts.retrieve('card_id') instead.")
+    def class_url(cls):
+        return "/v1/companies"
 
+
+class Person(ListableAPIResource):
+    pass
+
+
+class Login(ListableAPIResource):
+    pass
+
+
+class ParentCompany(ListableAPIResource):
     @classmethod
-    def retrieve(cls, id, api_key=None, svb_account=None, **params):
-        raise NotImplementedError(
-            "Can't retrieve a card without a customer, recipient or account "
-            "ID. Use customer.sources.retrieve('card_id'), "
-            "recipient.cards.retrieve('card_id'), or "
-            "account.external_accounts.retrieve('card_id') instead.")
+    def class_url(cls):
+        return "/v1/parent_companies"
+
+
+class Address(ListableAPIResource):
+    @classmethod
+    def class_url(cls):
+        return "/v1/addresses"
+
+
+class File(ListableAPIResource):
+    pass
+
+
+class Document(ListableAPIResource):
+    pass
+
+
+class GovernmentID(ListableAPIResource):
+    @classmethod
+    def class_url(cls):
+        return "/v1/gov_idents"
 
 
 class VerifyMixin(object):
@@ -623,48 +593,6 @@ class VerifyMixin(object):
         headers = populate_headers(idempotency_key)
         self.refresh_from(self.request('post', url, params, headers))
         return self
-
-
-class BankAccount(UpdateableAPIResource, DeletableAPIResource, VerifyMixin):
-
-    def instance_url(self):
-        token = util.utf8(self.id)
-        extn = urllib.quote_plus(token)
-        if hasattr(self, 'customer'):
-            customer = util.utf8(self.customer)
-
-            base = Customer.class_url()
-            owner_extn = urllib.quote_plus(customer)
-            class_base = "sources"
-
-        elif hasattr(self, 'account'):
-            account = util.utf8(self.account)
-
-            base = Account.class_url()
-            owner_extn = urllib.quote_plus(account)
-            class_base = "external_accounts"
-
-        else:
-            raise error.InvalidRequestError(
-                "Could not determine whether bank_account_id %s is "
-                "attached to a customer or an account." % token, 'id')
-
-        return "%s/%s/%s/%s" % (base, owner_extn, class_base, extn)
-
-    @classmethod
-    def modify(cls, sid, **params):
-        raise NotImplementedError(
-            "Can't modify a bank account without a customer or account ID. "
-            "Call save on customer.sources.retrieve('bank_account_id') or "
-            "account.external_accounts.retrieve('bank_account_id') instead.")
-
-    @classmethod
-    def retrieve(cls, id, api_key=None, svb_account=None, **params):
-        raise NotImplementedError(
-            "Can't retrieve a bank account without a customer or account ID. "
-            "Use customer.sources.retrieve('bank_account_id') or "
-            "account.external_accounts.retrieve('bank_account_id') instead.")
-
 
 class Charge(CreateableAPIResource, ListableAPIResource,
              UpdateableAPIResource):
@@ -718,191 +646,6 @@ class Charge(CreateableAPIResource, ListableAPIResource,
         return self
 
 
-class Dispute(CreateableAPIResource, ListableAPIResource,
-              UpdateableAPIResource):
-
-    def close(self, idempotency_key=None):
-        url = self.instance_url() + '/close'
-        headers = populate_headers(idempotency_key)
-        self.refresh_from(self.request('post', url, {}, headers))
-        return self
-
-
-class Customer(CreateableAPIResource, UpdateableAPIResource,
-               ListableAPIResource, DeletableAPIResource):
-
-    def add_invoice_item(self, idempotency_key=None, **params):
-        params['customer'] = self.id
-        ii = InvoiceItem.create(self.api_key,
-                                idempotency_key=idempotency_key, **params)
-        return ii
-
-    def invoices(self, **params):
-        params['customer'] = self.id
-        invoices = Invoice.list(self.api_key, **params)
-        return invoices
-
-    def invoice_items(self, **params):
-        params['customer'] = self.id
-        iis = InvoiceItem.list(self.api_key, **params)
-        return iis
-
-    def charges(self, **params):
-        params['customer'] = self.id
-        charges = Charge.list(self.api_key, **params)
-        return charges
-
-    # TODO: Remove arg in next major release.
-    def delete_discount(self, **params):
-        requestor = api_requestor.APIRequestor(self.api_key,
-                                               account=self.svb_account)
-        url = self.instance_url() + '/discount'
-        _, api_key = requestor.request('delete', url)
-        self.refresh_from({'discount': None}, api_key, True)
-
-    @classmethod
-    def modify_source(cls, sid, source_id, **params):
-        url = "%s/%s/sources/%s" % (
-            cls.class_url(), urllib.quote_plus(util.utf8(sid)),
-            urllib.quote_plus(util.utf8(source_id)))
-        return cls._modify(url, **params)
-
-
-class Invoice(CreateableAPIResource, ListableAPIResource,
-              UpdateableAPIResource):
-
-    def pay(self, idempotency_key=None):
-        headers = populate_headers(idempotency_key)
-        return self.request('post', self.instance_url() + '/pay', {}, headers)
-
-    @classmethod
-    def upcoming(cls, api_key=None, svb_account=None, **params):
-        if "subscription_items" in params:
-            items = convert_array_to_dict(params["subscription_items"])
-            params["subscription_items"] = items
-        requestor = api_requestor.APIRequestor(api_key,
-                                               account=svb_account)
-        url = cls.class_url() + '/upcoming'
-        response, api_key = requestor.request('get', url, params)
-        return convert_to_svb_object(response, api_key, svb_account)
-
-
-class InvoiceItem(CreateableAPIResource, UpdateableAPIResource,
-                  ListableAPIResource, DeletableAPIResource):
-    pass
-
-
-class Plan(CreateableAPIResource, DeletableAPIResource,
-           UpdateableAPIResource, ListableAPIResource):
-    pass
-
-
-class Subscription(CreateableAPIResource, DeletableAPIResource,
-                   UpdateableAPIResource, ListableAPIResource):
-
-    # TODO: Remove arg in next major release.
-    def delete_discount(self, **params):
-        requestor = api_requestor.APIRequestor(self.api_key,
-                                               account=self.svb_account)
-        url = self.instance_url() + '/discount'
-        _, api_key = requestor.request('delete', url)
-        self.refresh_from({'discount': None}, api_key, True)
-
-    @classmethod
-    def modify(cls, sid, **params):
-        if "items" in params:
-            params["items"] = convert_array_to_dict(params["items"])
-        return super(Subscription, cls).modify(sid, **params)
-
-    @classmethod
-    def create(cls, **params):
-        if "items" in params:
-            params["items"] = convert_array_to_dict(params["items"])
-        return super(Subscription, cls).create(**params)
-
-
-class SubscriptionItem(CreateableAPIResource, DeletableAPIResource,
-                       UpdateableAPIResource, ListableAPIResource):
-    @classmethod
-    def class_name(cls):
-        return 'subscription_item'
-
-
-class Refund(CreateableAPIResource, ListableAPIResource,
-             UpdateableAPIResource):
-    pass
-
-
-class Token(CreateableAPIResource):
-    pass
-
-
-class Coupon(CreateableAPIResource, UpdateableAPIResource,
-             DeletableAPIResource, ListableAPIResource):
-    pass
-
-
-class Event(ListableAPIResource):
-    pass
-
-
-class LoginLink(SvbObject):
-    pass
-
-
-class Payout(CreateableAPIResource, UpdateableAPIResource,
-             ListableAPIResource):
-
-    def cancel(self):
-        self.refresh_from(self.request('post',
-                          self.instance_url() + '/cancel'))
-
-
-class Transfer(CreateableAPIResource, UpdateableAPIResource,
-               ListableAPIResource):
-
-    def cancel(self):
-        self.refresh_from(self.request('post',
-                          self.instance_url() + '/cancel'))
-
-
-class Reversal(UpdateableAPIResource):
-
-    def instance_url(self):
-        token = util.utf8(self.id)
-        transfer = util.utf8(self.transfer)
-        base = Transfer.class_url()
-        cust_extn = urllib.quote_plus(transfer)
-        extn = urllib.quote_plus(token)
-        return "%s/%s/reversals/%s" % (base, cust_extn, extn)
-
-    @classmethod
-    def modify(cls, sid, **params):
-        raise NotImplementedError(
-            "Can't modify a reversal without a transfer"
-            "ID. Call save on transfer.reversals.retrieve('reversal_id')")
-
-    @classmethod
-    def retrieve(cls, id, api_key=None, **params):
-        raise NotImplementedError(
-            "Can't retrieve a reversal without a transfer"
-            "ID. Use transfer.reversals.retrieve('reversal_id')")
-
-
-class Recipient(CreateableAPIResource, UpdateableAPIResource,
-                ListableAPIResource, DeletableAPIResource):
-
-    def transfers(self, **params):
-        params['recipient'] = self.id
-        transfers = Transfer.list(self.api_key, **params)
-        return transfers
-
-
-# This resource can only be instantiated when expanded on a BalanceTransaction
-class RecipientTransfer(SvbObject):
-    pass
-
-
 class FileUpload(ListableAPIResource):
     @classmethod
     def api_base(cls):
@@ -923,117 +666,6 @@ class FileUpload(ListableAPIResource):
         response, api_key = requestor.request(
             'post', url, params=params, headers=supplied_headers)
         return convert_to_svb_object(response, api_key, svb_account)
-
-
-class ApplicationFee(ListableAPIResource):
-    @classmethod
-    def class_name(cls):
-        return 'application_fee'
-
-    def refund(self, idempotency_key=None, **params):
-        headers = populate_headers(idempotency_key)
-        url = self.instance_url() + '/refund'
-        self.refresh_from(self.request('post', url, params, headers))
-        return self
-
-
-class ApplicationFeeRefund(UpdateableAPIResource):
-
-    @classmethod
-    def _build_instance_url(cls, fee, sid):
-        fee = util.utf8(fee)
-        sid = util.utf8(sid)
-        base = ApplicationFee.class_url()
-        cust_extn = urllib.quote_plus(fee)
-        extn = urllib.quote_plus(sid)
-        return "%s/%s/refunds/%s" % (base, cust_extn, extn)
-
-    @classmethod
-    def modify(cls, fee, sid, **params):
-        url = cls._build_instance_url(fee, sid)
-        return cls._modify(url, **params)
-
-    def instance_url(self):
-        return self._build_instance_url(self.fee, self.id)
-
-    @classmethod
-    def retrieve(cls, id, api_key=None, **params):
-        raise NotImplementedError(
-            "Can't retrieve a refund without an application fee ID. "
-            "Use application_fee.refunds.retrieve('refund_id') instead.")
-
-
-class BitcoinReceiver(CreateableAPIResource, UpdateableAPIResource,
-                      DeletableAPIResource, ListableAPIResource):
-
-    def instance_url(self):
-        token = util.utf8(self.id)
-        extn = urllib.quote_plus(token)
-
-        if hasattr(self, 'customer'):
-            customer = util.utf8(self.customer)
-            base = Customer.class_url()
-            cust_extn = urllib.quote_plus(customer)
-            return "%s/%s/sources/%s" % (base, cust_extn, extn)
-        else:
-            base = BitcoinReceiver.class_url()
-            return "%s/%s" % (base, extn)
-
-    @classmethod
-    def class_url(cls):
-        return '/v1/bitcoin/receivers'
-
-
-class BitcoinTransaction(SvbObject):
-    pass
-
-
-class Product(CreateableAPIResource, UpdateableAPIResource,
-              ListableAPIResource, DeletableAPIResource):
-    pass
-
-
-class SKU(CreateableAPIResource, UpdateableAPIResource,
-          ListableAPIResource, DeletableAPIResource):
-    pass
-
-
-class Order(CreateableAPIResource, UpdateableAPIResource,
-            ListableAPIResource):
-    def pay(self, idempotency_key=None, **params):
-        headers = populate_headers(idempotency_key)
-        return self.request(
-            'post', self.instance_url() + '/pay', params, headers)
-
-    def return_order(self, idempotency_key=None, **params):
-        headers = populate_headers(idempotency_key)
-        return self.request(
-            'post', self.instance_url() + '/returns', params, headers)
-
-
-class OrderReturn(ListableAPIResource):
-    @classmethod
-    def class_url(cls):
-        return '/v1/order_returns'
-
-
-class CountrySpec(ListableAPIResource):
-    @classmethod
-    def class_name(cls):
-        return 'country_spec'
-
-
-class ThreeDSecure(CreateableAPIResource):
-    @classmethod
-    def class_url(cls):
-        return '/v1/3d_secure'
-
-
-class ApplePayDomain(CreateableAPIResource, ListableAPIResource,
-                     DeletableAPIResource):
-    @classmethod
-    def class_url(cls):
-        return '/v1/apple_pay/domains'
 
 
 class Source(CreateableAPIResource, UpdateableAPIResource, VerifyMixin):

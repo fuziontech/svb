@@ -1,5 +1,6 @@
 import calendar
 import datetime
+import hmac
 import platform
 import time
 import urllib
@@ -88,8 +89,9 @@ class APIRequestor(object):
         return str
 
     def _hmac_sign(self, timestamp, method, path, query, body):
+        body = body or ""
         message = "\n".join([timestamp, method, path, query, body])
-        signer = hmac.new(self.hmac_secret)
+        signer = hmac.new(self.hmac_key or "NoKey")
         signer.update(message)
         return signer.hexdigest()
 
@@ -115,34 +117,30 @@ class APIRequestor(object):
     def specific_api_error(self, rbody, rcode, resp, rheaders, error_data):
         util.log_info(
             'SVB API error received',
-            error_code=error_data.get('code'),
-            error_type=error_data.get('type'),
-            error_message=error_data.get('message'),
-            error_param=error_data.get('param'),
+            error_message=error_data,
         )
 
         # Rate limits were previously coded as 400's with code 'rate_limit'
-        if rcode == 429 or (rcode == 400 and
-                            error_data.get('code') == 'rate_limit'):
+        if rcode == 429:
             return error.RateLimitError(
-                error_data.get('message'), rbody, rcode, resp, rheaders)
+                error_data, rbody, rcode, resp, rheaders)
         elif rcode in [400, 404]:
             return error.InvalidRequestError(
-                error_data.get('message'), error_data.get('param'),
+                error_data, error_data,
                 rbody, rcode, resp, rheaders)
         elif rcode == 401:
             return error.AuthenticationError(
-                error_data.get('message'), rbody, rcode, resp, rheaders)
+                error_data, rbody, rcode, resp, rheaders)
         elif rcode == 402:
             return error.CardError(
-                error_data.get('message'), error_data.get('param'),
-                error_data.get('code'), rbody, rcode, resp, rheaders)
+                error_data, error_data,
+                error_data, rbody, rcode, resp, rheaders)
         elif rcode == 403:
             return error.PermissionError(
-                error_data.get('message'), rbody, rcode, resp, rheaders)
+                error_data, rbody, rcode, resp, rheaders)
         else:
             return error.APIError(
-                error_data.get('message'), rbody, rcode, resp, rheaders)
+                error_data, rbody, rcode, resp, rheaders)
 
     def request_headers(self, api_key, method):
         user_agent = 'SVB/v1 PythonBindings/%s' % (version.VERSION,)
@@ -235,7 +233,7 @@ class APIRequestor(object):
 
         if True:
             #TODO: make hmac toggleable
-            timestamp = calendar.timegm(time.gmtime())
+            timestamp = str(calendar.timegm(time.gmtime()))
             scheme, netloc, path, base_query, fragment = urlparse.urlsplit(url)
             hmac_signature = self._hmac_sign(timestamp,
                                              method.upper(),
