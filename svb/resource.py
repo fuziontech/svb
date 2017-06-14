@@ -9,41 +9,20 @@ from svb import api_requestor, error, util, upload_api_base
 def convert_to_svb_object(resp, api_key, account):
     types = {
         'account': Account,
-        'alipay_account': AlipayAccount,
-        'apple_pay_domain': ApplePayDomain,
-        'application_fee': ApplicationFee,
-        'bank_account': BankAccount,
-        'bitcoin_receiver': BitcoinReceiver,
-        'bitcoin_transaction': BitcoinTransaction,
-        'card': Card,
-        'charge': Charge,
-        'country_spec': CountrySpec,
-        'coupon': Coupon,
-        'customer': Customer,
-        'dispute': Dispute,
-        'event': Event,
-        'fee_refund': ApplicationFeeRefund,
+        'ach': ACH,
+        'book': Book,
+        'virtualcard': VirtualCard,
+        'wire': Wire,
+        'company': Company,
+        'person': Person,
         'file_upload': FileUpload,
-        'invoice': Invoice,
-        'invoiceitem': InvoiceItem,
+        'login': Login,
+        'parent_company': ParentCompany,
+        'address': Address,
+        'document': Document,
+        'gov_ident': GovernmentID,
+        'charge': Charge,
         'list': ListObject,
-        'login_link': LoginLink,
-        'payout': Payout,
-        'plan': Plan,
-        'recipient': Recipient,
-        'recipient_transfer': RecipientTransfer,
-        'refund': Refund,
-        'source': Source,
-        'subscription': Subscription,
-        'subscription_item': SubscriptionItem,
-        'three_d_secure': ThreeDSecure,
-        'token': Token,
-        'transfer': Transfer,
-        'transfer_reversal': Reversal,
-        'product': Product,
-        'sku': SKU,
-        'order': Order,
-        'order_return': OrderReturn
     }
 
     if isinstance(resp, list):
@@ -520,7 +499,7 @@ class Account(CreateableAPIResource, ListableAPIResource,
         return cls._modify(url, **params)
 
 
-class ACH(ListableAPIResource):
+class ACH(CreateableAPIResource, ListableAPIResource):
     @classmethod
     def class_url(cls):
         cls_name = cls.class_name()

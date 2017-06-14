@@ -174,7 +174,7 @@ class APIRequestor(object):
             headers['SVB-Account'] = self.svb_account
 
         if method == 'post':
-            headers['Content-Type'] = 'application/x-www-form-urlencoded'
+            headers['Content-Type'] = 'application/json'
 
         if self.api_version is not None:
             headers['Svb-Version'] = self.api_version
