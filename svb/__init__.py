@@ -7,6 +7,7 @@
 # Configuration variables
 
 api_key = None
+hmac_key = None
 client_id = None
 api_base = 'https://api.svb.com'
 upload_api_base = 'https://api.svb.com'
@@ -72,7 +73,6 @@ from svb.error import (  # noqa
     InvalidRequestError,
     SignatureVerificationError,
     SVBError)
-
 
 # Sets some basic information about the running application that's sent along
 # with API requests. Useful for plugin authors to identify their plugin when

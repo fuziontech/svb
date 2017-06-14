@@ -19,11 +19,13 @@ except ImportError:
 try:
     import pycurl
 except ImportError:
+    # Try to load in pycurl, but don't sweat it if it's not available.
     pycurl = None
 
 try:
     import requests
 except ImportError:
+    # Try to load in requests, but don't sweat it if it's not available.
     requests = None
 else:
     try:

@@ -102,7 +102,8 @@ def _serialize_list(array, previous):
 
 
 class SvbObject(dict):
-    def __init__(self, id=None, api_key=None, svb_account=None, **params):
+    def __init__(self, id=None, api_key=None, svb_account=None,
+                 hmac_key=None, **params):
         super(SvbObject, self).__init__()
 
         self._unsaved_values = set()
@@ -112,6 +113,7 @@ class SvbObject(dict):
         self._previous = None
 
         object.__setattr__(self, 'api_key', api_key)
+        object.__setattr__(self, 'hmac_key', hmac_key)
         object.__setattr__(self, 'svb_account', svb_account)
 
         if id:
@@ -224,7 +226,7 @@ class SvbObject(dict):
             params = self._retrieve_params
         requestor = api_requestor.APIRequestor(
             key=self.api_key, api_base=self.api_base(),
-            account=self.svb_account)
+            account=self.svb_account, hmac_key=self.hmac_key)
         response, api_key = requestor.request(method, url, params, headers)
 
         return convert_to_svb_object(response, api_key, self.svb_account)
@@ -406,10 +408,11 @@ class ListableAPIResource(APIResource):
         return cls.list(*args, **params).auto_paging_iter()
 
     @classmethod
-    def list(cls, api_key=None, svb_account=None, **params):
+    def list(cls, api_key=None, svb_account=None, hmac_key=None, **params):
         requestor = api_requestor.APIRequestor(api_key,
                                                api_base=cls.api_base(),
-                                               account=svb_account)
+                                               account=svb_account,
+                                               hmac_key=hmac_key)
         url = cls.class_url()
         response, api_key = requestor.request('get', url, params)
         svb_object = convert_to_svb_object(response, api_key,
@@ -422,8 +425,10 @@ class CreateableAPIResource(APIResource):
 
     @classmethod
     def create(cls, api_key=None, idempotency_key=None,
-               svb_account=None, **params):
-        requestor = api_requestor.APIRequestor(api_key, account=svb_account)
+               svb_account=None, hmac_key=None, **params):
+        requestor = api_requestor.APIRequestor(api_key,
+                                               account=svb_account,
+                                               hmac_key=hmac_key)
         url = cls.class_url()
         headers = populate_headers(idempotency_key)
         response, api_key = requestor.request('post', url, params, headers)
@@ -434,8 +439,10 @@ class UpdateableAPIResource(APIResource):
 
     @classmethod
     def _modify(cls, url, api_key=None, idempotency_key=None,
-                svb_account=None, **params):
-        requestor = api_requestor.APIRequestor(api_key, account=svb_account)
+                svb_account=None, hmac_key=None, **params):
+        requestor = api_requestor.APIRequestor(api_key,
+                                               account=svb_account,
+                                               hmac_key=hmac_key)
         headers = populate_headers(idempotency_key)
         response, api_key = requestor.request('post', url, params, headers)
         return convert_to_svb_object(response, api_key, svb_account)
@@ -465,6 +472,11 @@ class DeletableAPIResource(APIResource):
 
 
 # API objects
+class ACH(ListableAPIResource):
+    @classmethod
+    def class_url(cls):
+        return '/v1/balance/history'
+
 
 class Account(CreateableAPIResource, ListableAPIResource,
               UpdateableAPIResource, DeletableAPIResource):

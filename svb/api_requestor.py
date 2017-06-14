@@ -64,9 +64,10 @@ def _build_api_url(url, query):
 class APIRequestor(object):
 
     def __init__(self, key=None, client=None, api_base=None, api_version=None,
-                 account=None):
+                 account=None, hmac_key=None):
         self.api_base = api_base or svb.api_base
         self.api_key = key
+        self.hmac_key = hmac_key
         self.api_version = api_version or svb.api_version
         self.svb_account = account
 
@@ -85,6 +86,12 @@ class APIRequestor(object):
         if info['url']:
             str += " (%s)" % (info['url'],)
         return str
+
+    def _hmac_sign(self, timestamp, method, path, query, body):
+        message = "\n".join([timestamp, method, path, query, body])
+        signer = hmac.new(self.hmac_secret)
+        signer.update(message)
+        return signer.hexdigest()
 
     def request(self, method, url, params=None, headers=None):
         rbody, rcode, rheaders, my_api_key = self.request_raw(
@@ -225,6 +232,18 @@ class APIRequestor(object):
         if supplied_headers is not None:
             for key, value in supplied_headers.items():
                 headers[key] = value
+
+        if True:
+            #TODO: make hmac toggleable
+            timestamp = calendar.timegm(time.gmtime())
+            scheme, netloc, path, base_query, fragment = urlparse.urlsplit(url)
+            hmac_signature = self._hmac_sign(timestamp,
+                                             method.upper(),
+                                             path,
+                                             base_query,
+                                             post_data)
+            headers['X-Timestamp'] = timestamp
+            headers['X-Signature'] = hmac_signature
 
         util.log_info('Request to SVB api', method=method, path=abs_url)
         util.log_debug(
