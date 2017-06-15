@@ -65,7 +65,7 @@ setup(
     tests_require=['unittest2', 'mock'],
     use_2to3=True,
     classifiers=[
-        "Development Status :: 2 - Beta",
+        "Development Status :: 2 - Alpha",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
