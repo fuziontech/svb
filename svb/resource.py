@@ -4,7 +4,7 @@ import sys
 from copy import deepcopy
 
 from svb import api_requestor, error, util, upload_api_base
-
+from svb.six import iteritems, string_types
 
 def convert_to_svb_object(resp, api_key, account):
     types = {
@@ -26,15 +26,16 @@ def convert_to_svb_object(resp, api_key, account):
 
     if isinstance(resp, dict):
         if 'data' in resp:
-            resp = resp.copy()
-            resp = resp['data']
+            if not isinstance(resp['data'], list):
+                resp = resp.copy()
+                resp = resp['data']
 
     if isinstance(resp, list):
         return [convert_to_svb_object(i, api_key, account) for i in resp]
     elif isinstance(resp, dict) and not isinstance(resp, SvbObject):
         resp = resp.copy()
         klass_name = resp.get('object')
-        if isinstance(klass_name, basestring):
+        if isinstance(klass_name, string_types):
             klass = types.get(klass_name, SvbObject)
         else:
             klass = SvbObject
@@ -194,7 +195,7 @@ class SvbObject(dict):
 
         self._transient_values = self._transient_values - set(values)
 
-        for k, v in values.iteritems():
+        for k, v in iteritems(values):
             super(SvbObject, self).__setitem__(
                 k, convert_to_svb_object(v, api_key, svb_account))
 
@@ -217,10 +218,10 @@ class SvbObject(dict):
     def __repr__(self):
         ident_parts = [type(self).__name__]
 
-        if isinstance(self.get('object'), basestring):
+        if isinstance(self.get('object'), string_types):
             ident_parts.append(self.get('object'))
 
-        if isinstance(self.get('id'), basestring):
+        if isinstance(self.get('id'), string_types):
             ident_parts.append('id=%s' % (self.get('id'),))
 
         unicode_repr = '<%s at %s> JSON: %s' % (
@@ -310,7 +311,7 @@ class APIResource(SvbObject):
             raise NotImplementedError(
                 'APIResource is an abstract class.  You should perform '
                 'actions on its subclasses (e.g. Charge, Customer)')
-        return str(urllib.quote_plus(cls.__name__.lower()))
+        return str(util.quote_plus(cls.__name__.lower()))
 
     @classmethod
     def class_url(cls):
@@ -325,7 +326,7 @@ class APIResource(SvbObject):
                 'has invalid ID: %r' % (type(self).__name__, id), 'id')
         id = util.utf8(id)
         base = self.class_url()
-        extn = urllib.quote_plus(id)
+        extn = util.quote_plus(id)
         return "%s/%s" % (base, extn)
 
 
@@ -357,7 +358,7 @@ class ListObject(SvbObject):
     def retrieve(self, id, **params):
         base = self.get('url')
         id = util.utf8(id)
-        extn = urllib.quote_plus(id)
+        extn = util.quote_plus(id)
         url = "%s/%s" % (base, extn)
 
         return self.request('get', url, params)
@@ -432,7 +433,7 @@ class UpdateableAPIResource(APIResource):
 
     @classmethod
     def modify(cls, sid, **params):
-        url = "%s/%s" % (cls.class_url(), urllib.quote_plus(util.utf8(sid)))
+        url = "%s/%s" % (cls.class_url(), util.quote_plus(util.utf8(sid)))
         return cls._modify(url, **params)
 
     def save(self, idempotency_key=None):

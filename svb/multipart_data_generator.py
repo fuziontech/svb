@@ -2,6 +2,7 @@ import random
 import sys
 import io
 
+from svb.six import iteritems
 
 class MultipartDataGenerator(object):
     def __init__(self, chunk_size=1028):
@@ -11,7 +12,7 @@ class MultipartDataGenerator(object):
         self.chunk_size = chunk_size
 
     def add_params(self, params):
-        for key, value in params.iteritems():
+        for key, value in iteritems(params):
             if value is None:
                 continue
 

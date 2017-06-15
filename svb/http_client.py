@@ -5,6 +5,7 @@ import warnings
 import email
 
 from svb import error, util
+from svb.six import iteritems, string_types
 
 # - Requests is the preferred HTTP library
 # - Google App Engine has urlfetch
@@ -52,9 +53,6 @@ try:
     from google.appengine.api import urlfetch
 except ImportError:
     urlfetch = None
-
-# proxy support for the pycurl client
-from urlparse import urlparse
 
 
 def new_default_http_client(*args, **kwargs):
@@ -235,14 +233,14 @@ class PycurlClient(HTTPClient):
             # now that we have the parser, get the proxy url pieces
             proxy = self._proxy
             for scheme in proxy:
-                proxy[scheme] = urlparse(proxy[scheme])
+                proxy[scheme] = url.urlparse.urlparse(proxy[scheme])
 
     def parse_headers(self, data):
         if '\r\n' not in data:
             return {}
         raw_headers = data.split('\r\n', 1)[1]
         headers = email.message_from_string(raw_headers)
-        return dict((k.lower(), v) for k, v in dict(headers).iteritems())
+        return dict((k.lower(), v) for k, v in iteritems(dict(headers)))
 
     def request(self, method, url, headers, post_data=None):
         b = util.io.BytesIO()
@@ -284,7 +282,7 @@ class PycurlClient(HTTPClient):
         self._curl.setopt(pycurl.CONNECTTIMEOUT, 30)
         self._curl.setopt(pycurl.TIMEOUT, 80)
         self._curl.setopt(pycurl.HTTPHEADER, ['%s: %s' % (k, v)
-                                              for k, v in headers.iteritems()])
+                                              for k, v in iteritems(headers)])
         if self._verify_ssl_certs:
             self._curl.setopt(pycurl.CAINFO, os.path.join(
                 os.path.dirname(__file__), 'data/ca-certificates.crt'))
@@ -352,7 +350,7 @@ class Urllib2Client(HTTPClient):
             self._opener = urllib2.build_opener(proxy)
 
     def request(self, method, url, headers, post_data=None):
-        if sys.version_info >= (3, 0) and isinstance(post_data, basestring):
+        if sys.version_info >= (3, 0) and isinstance(post_data, string_types):
             post_data = post_data.encode('utf-8')
 
         req = urllib2.Request(url, post_data, headers)
@@ -375,7 +373,7 @@ class Urllib2Client(HTTPClient):
             headers = dict(e.info())
         except (urllib2.URLError, ValueError) as e:
             self._handle_request_error(e)
-        lh = dict((k.lower(), v) for k, v in dict(headers).iteritems())
+        lh = dict((k.lower(), v) for k, v in iteritems(dict(headers)))
         return rbody, rcode, lh
 
     def _handle_request_error(self, e):

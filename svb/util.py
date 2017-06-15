@@ -7,8 +7,8 @@ import sys
 import os
 import re
 
-import svb 
-
+import svb
+from svb.six import string_types, text_type, u
 
 SVB_LOG = os.environ.get('SVB_LOG')
 
@@ -30,6 +30,17 @@ try:
 except ImportError:
     # Python < 2.6
     from cgi import parse_qsl
+
+if sys.version_info[0] < 3:
+    import urlparse
+    urlparse = urlparse
+    from urllib import quote_plus
+    quote_plus = quote_plus
+else:
+    from urllib import parse
+    urlparse = parse
+    quote_plus = parse.quote_plus
+
 
 try:
     import json
@@ -62,7 +73,7 @@ def utf8(value):
     # Note the ordering of these conditionals: `unicode` isn't a symbol in
     # Python 3 so make sure to check version before trying to use it. Python
     # 2to3 will also boil out `unicode`.
-    if sys.version_info < (3, 0) and isinstance(value, unicode):
+    if sys.version_info < (3, 0) and isinstance(value, text_type):
         return value.encode('utf-8')
     else:
         return value
@@ -77,7 +88,7 @@ def _console_log_level():
     if svb.log in ['debug', 'info']:
         return svb.log
     elif SVB_LOG in ['debug', 'info']:
-        return SVB_LOG 
+        return SVB_LOG
     else:
         return None
 
@@ -111,8 +122,8 @@ def logfmt(props):
         # ascii. Since the code is sent through 2to3, we can't just
         # use unicode(val, encoding='utf8') since it will be
         # translated incorrectly.
-        if not isinstance(val, basestring):
-            val = unicode(val)
+        if not isinstance(val, string_types):
+            val = u(repr(val) or "None")
         if re.search(r'\s', val):
             val = repr(val)
         # key should already be a string

@@ -4,12 +4,13 @@ import hmac
 import platform
 import time
 import urllib
-import urlparse
 import warnings
 
 import svb
 from svb import error, http_client, version, util
 from svb.multipart_data_generator import MultipartDataGenerator
+from svb.six import b, iteritems
+from svb.six.moves.urllib.parse import urlencode, urlparse, urlsplit
 
 
 def _encode_datetime(dttime):
@@ -29,7 +30,7 @@ def _encode_nested_dict(key, data, fmt='%s[%s]'):
 
 
 def _api_encode(data):
-    for key, value in data.iteritems():
+    for key, value in iteritems(data):
         key = util.utf8(key)
         if value is None:
             continue
@@ -54,7 +55,7 @@ def _api_encode(data):
 
 
 def _build_api_url(url, query):
-    scheme, netloc, path, base_query, fragment = urlparse.urlsplit(url)
+    scheme, netloc, path, base_query, fragment = urlsplit(url)
 
     if base_query:
         query = '%s&%s' % (base_query, query)
@@ -91,8 +92,8 @@ class APIRequestor(object):
     def _hmac_sign(self, timestamp, method, path, query, body):
         body = body or ""
         message = "\n".join([timestamp, method, path, query, body])
-        signer = hmac.new(self.hmac_key or "NoKey")
-        signer.update(message)
+        signer = hmac.new(b(self.hmac_key or 'NoKey'))
+        signer.update(message.encode('utf-8'))
         return signer.hexdigest()
 
     def request(self, method, url, params=None, headers=None):
@@ -202,7 +203,7 @@ class APIRequestor(object):
 
         abs_url = '%s%s' % (self.api_base, url)
 
-        encoded_params = urllib.urlencode(list(_api_encode(params or {})))
+        encoded_params = urlencode(list(_api_encode(params or {})))
 
         if method == 'get' or method == 'delete':
             if params:
@@ -234,7 +235,7 @@ class APIRequestor(object):
         if True:
             #TODO: make hmac toggleable
             timestamp = str(calendar.timegm(time.gmtime()))
-            scheme, netloc, path, base_query, fragment = urlparse.urlsplit(url)
+            scheme, netloc, path, base_query, fragment = urlsplit(url)
             hmac_signature = self._hmac_sign(timestamp,
                                              method.upper(),
                                              path,
