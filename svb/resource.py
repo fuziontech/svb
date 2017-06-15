@@ -21,7 +21,6 @@ def convert_to_svb_object(resp, api_key, account):
         'address': Address,
         'document': Document,
         'gov_ident': GovernmentID,
-        'charge': Charge,
         'list': ListObject,
     }
 
@@ -451,8 +450,7 @@ class DeletableAPIResource(APIResource):
 
 
 # API objects
-class Account(CreateableAPIResource, ListableAPIResource,
-              UpdateableAPIResource, DeletableAPIResource):
+class Account(ListableAPIResource):
     @classmethod
     def retrieve(cls, id=None, api_key=None, **params):
         instance = cls(id, api_key, **params)
@@ -463,40 +461,8 @@ class Account(CreateableAPIResource, ListableAPIResource,
     def modify(cls, id=None, **params):
         return cls._modify(cls._build_instance_url(id), **params)
 
-    @classmethod
-    def _build_instance_url(cls, sid):
-        if not sid:
-            return "/v1/account"
-        sid = util.utf8(sid)
-        base = cls.class_url()
-        extn = urllib.quote_plus(sid)
-        return "%s/%s" % (base, extn)
-
     def instance_url(self):
         return self._build_instance_url(self.get('id'))
-
-    def reject(self, reason=None, idempotency_key=None):
-        url = self.instance_url() + '/reject'
-        headers = populate_headers(idempotency_key)
-        if reason:
-            params = {"reason": reason}
-        else:
-            params = {}
-        self.refresh_from(
-            self.request('post', url, params, headers)
-        )
-        return self
-
-    def deauthorize(self, **params):
-        params['svb_user_id'] = self.id
-        return oauth.OAuth.deauthorize(**params)
-
-    @classmethod
-    def modify_external_account(cls, sid, external_account_id, **params):
-        url = "%s/%s/external_accounts/%s" % (
-            cls.class_url(), urllib.quote_plus(util.utf8(sid)),
-            urllib.quote_plus(util.utf8(external_account_id)))
-        return cls._modify(url, **params)
 
 
 class ACH(CreateableAPIResource, ListableAPIResource,
@@ -582,57 +548,6 @@ class VerifyMixin(object):
 
     def verify(self, idempotency_key=None, **params):
         url = self.instance_url() + '/verify'
-        headers = populate_headers(idempotency_key)
-        self.refresh_from(self.request('post', url, params, headers))
-        return self
-
-class Charge(CreateableAPIResource, ListableAPIResource,
-             UpdateableAPIResource):
-
-    def refund(self, idempotency_key=None, **params):
-        url = self.instance_url() + '/refund'
-        headers = populate_headers(idempotency_key)
-        self.refresh_from(self.request('post', url, params, headers))
-        return self
-
-    def capture(self, idempotency_key=None, **params):
-        url = self.instance_url() + '/capture'
-        headers = populate_headers(idempotency_key)
-        self.refresh_from(self.request('post', url, params, headers))
-        return self
-
-    def update_dispute(self, idempotency_key=None, **params):
-        requestor = api_requestor.APIRequestor(self.api_key,
-                                               account=self.svb_account)
-        url = self.instance_url() + '/dispute'
-        headers = populate_headers(idempotency_key)
-        response, api_key = requestor.request('post', url, params, headers)
-        self.refresh_from({'dispute': response}, api_key, True)
-        return self.dispute
-
-    def close_dispute(self, idempotency_key=None):
-        requestor = api_requestor.APIRequestor(self.api_key,
-                                               account=self.svb_account)
-        url = self.instance_url() + '/dispute/close'
-        headers = populate_headers(idempotency_key)
-        response, api_key = requestor.request('post', url, {}, headers)
-        self.refresh_from({'dispute': response}, api_key, True)
-        return self.dispute
-
-    def mark_as_fraudulent(self, idempotency_key=None):
-        params = {
-            'fraud_details': {'user_report': 'fraudulent'}
-        }
-        url = self.instance_url()
-        headers = populate_headers(idempotency_key)
-        self.refresh_from(self.request('post', url, params, headers))
-        return self
-
-    def mark_as_safe(self, idempotency_key=None):
-        params = {
-            'fraud_details': {'user_report': 'safe'}
-        }
-        url = self.instance_url()
         headers = populate_headers(idempotency_key)
         self.refresh_from(self.request('post', url, params, headers))
         return self
