@@ -34,7 +34,6 @@ from svb.resource import (  # noqa
     Login,
     ParentCompany,
     Address,
-    File,
     FileUpload,
     Document,
     GovernmentID,

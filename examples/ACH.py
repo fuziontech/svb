@@ -4,7 +4,6 @@ svb.api_key = "I_LOVE_BANKING"
 
 print("Attempting to create ACH transfer")
 
-
 # Refer to http://docs.svbplatform.com/ach/#create-an-ach-transfer
 # for required fields
 resp = svb.ACH.create(account_number='3457094867186',

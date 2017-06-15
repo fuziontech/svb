@@ -24,6 +24,11 @@ def convert_to_svb_object(resp, api_key, account):
         'list': ListObject,
     }
 
+    if isinstance(resp, dict):
+        if 'data' in resp:
+            resp = resp.copy()
+            resp = resp['data']
+
     if isinstance(resp, list):
         return [convert_to_svb_object(i, api_key, account) for i in resp]
     elif isinstance(resp, dict) and not isinstance(resp, SvbObject):
@@ -313,7 +318,7 @@ class APIResource(SvbObject):
         return "/v1/%ss" % (cls_name,)
 
     def instance_url(self):
-        id = self.get('id')
+        id = str(self.get('id'))
         if not id:
             raise error.InvalidRequestError(
                 'Could not determine which URL to request: %s instance '
@@ -435,7 +440,7 @@ class UpdateableAPIResource(APIResource):
         headers = populate_headers(idempotency_key)
 
         if updated_params:
-            self.refresh_from(self.request('post', self.instance_url(),
+            self.refresh_from(self.request('patch', self.instance_url(),
                                            updated_params, headers))
         else:
             util.logger.debug("Trying to save already saved object %r", self)
@@ -496,7 +501,8 @@ class VirtualCard(CreateableAPIResource, ListableAPIResource,
         return self
 
 
-class Wire(ListableAPIResource):
+class Wire(CreateableAPIResource, ListableAPIResource,
+           UpdateableAPIResource):
     @classmethod
     def class_url(cls):
         return "/v1/wire"
@@ -504,41 +510,44 @@ class Wire(ListableAPIResource):
 
 # Onboarding objects
 
-class Company(ListableAPIResource):
+class Company(CreateableAPIResource, ListableAPIResource,
+              UpdateableAPIResource, DeletableAPIResource):
     @classmethod
     def class_url(cls):
         return "/v1/companies"
 
 
-class Person(ListableAPIResource):
+class Person(CreateableAPIResource, ListableAPIResource,
+             UpdateableAPIResource, DeletableAPIResource):
     pass
 
 
-class Login(ListableAPIResource):
+class Login(CreateableAPIResource, ListableAPIResource,
+            UpdateableAPIResource, DeletableAPIResource):
     pass
 
 
-class ParentCompany(ListableAPIResource):
+class ParentCompany(CreateableAPIResource, ListableAPIResource,
+                    UpdateableAPIResource, DeletableAPIResource):
     @classmethod
     def class_url(cls):
         return "/v1/parent_companies"
 
 
-class Address(ListableAPIResource):
+class Address(CreateableAPIResource, ListableAPIResource,
+              UpdateableAPIResource, DeletableAPIResource):
     @classmethod
     def class_url(cls):
         return "/v1/addresses"
 
 
-class File(ListableAPIResource):
+class Document(CreateableAPIResource, ListableAPIResource,
+               UpdateableAPIResource, DeletableAPIResource):
     pass
 
 
-class Document(ListableAPIResource):
-    pass
-
-
-class GovernmentID(ListableAPIResource):
+class GovernmentID(CreateableAPIResource, ListableAPIResource,
+                   UpdateableAPIResource, DeletableAPIResource):
     @classmethod
     def class_url(cls):
         return "/v1/gov_idents"
@@ -553,7 +562,8 @@ class VerifyMixin(object):
         return self
 
 
-class FileUpload(ListableAPIResource):
+class FileUpload(CreateableAPIResource, ListableAPIResource,
+                 UpdateableAPIResource, DeletableAPIResource):
     @classmethod
     def api_base(cls):
         return upload_api_base
@@ -573,22 +583,3 @@ class FileUpload(ListableAPIResource):
         response, api_key = requestor.request(
             'post', url, params=params, headers=supplied_headers)
         return convert_to_svb_object(response, api_key, svb_account)
-
-
-class Source(CreateableAPIResource, UpdateableAPIResource, VerifyMixin):
-    def delete(self, **params):
-        if hasattr(self, 'customer') and self.customer:
-            extn = urllib.quote_plus(util.utf8(self.id))
-            customer = util.utf8(self.customer)
-            base = Customer.class_url()
-            owner_extn = urllib.quote_plus(customer)
-            url = "%s/%s/sources/%s" % (base, owner_extn, extn)
-
-            self.refresh_from(self.request('delete', url, params))
-            return self
-
-        else:
-            raise NotImplementedError(
-                'Source objects cannot be deleted, they can only be detached '
-                'from customer objects. This source object does not appear to '
-                'be currently attached to a customer object.')

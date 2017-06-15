@@ -173,7 +173,7 @@ class APIRequestor(object):
         if self.svb_account:
             headers['SVB-Account'] = self.svb_account
 
-        if method == 'post':
+        if method == 'post' or method == 'patch':
             headers['Content-Type'] = 'application/json'
 
         if self.api_version is not None:
@@ -208,7 +208,7 @@ class APIRequestor(object):
             if params:
                 abs_url = _build_api_url(abs_url, encoded_params)
             post_data = None
-        elif method == 'post':
+        elif method == 'post' or method == 'patch':
             if supplied_headers is not None and \
                     supplied_headers.get("Content-Type") == \
                     "multipart/form-data":
