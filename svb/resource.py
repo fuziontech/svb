@@ -499,22 +499,35 @@ class Account(CreateableAPIResource, ListableAPIResource,
         return cls._modify(url, **params)
 
 
-class ACH(CreateableAPIResource, ListableAPIResource):
+class ACH(CreateableAPIResource, ListableAPIResource,
+          UpdateableAPIResource):
     @classmethod
     def class_url(cls):
         cls_name = cls.class_name()
         return "/v1/%s" % (cls_name,)
 
 
-class Book(ListableAPIResource):
+class Book(CreateableAPIResource, ListableAPIResource,
+           UpdateableAPIResource):
     @classmethod
     def class_url(cls):
         cls_name = cls.class_name()
         return "/v1/%s" % (cls_name,)
 
 
-class VirtualCard(ListableAPIResource):
-    pass
+class VirtualCard(CreateableAPIResource, ListableAPIResource,
+                  UpdateableAPIResource, DeletableAPIResource):
+    def email(self, email=None, idempotency_key=None):
+        url = self.instance_url() + '/email'
+        headers = populate_headers(idempotency_key)
+        if email:
+            params = {"email": email}
+        else:
+            params = {}
+        self.refresh_from(
+            self.request('post', url, params, headers)
+        )
+        return self
 
 
 class Wire(ListableAPIResource):

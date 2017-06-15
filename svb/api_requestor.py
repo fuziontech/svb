@@ -218,7 +218,7 @@ class APIRequestor(object):
                 supplied_headers["Content-Type"] = \
                     "multipart/form-data; boundary=%s" % (generator.boundary,)
             else:
-                post_data = encoded_params
+                post_data = util.json.dumps({"data": params})
         else:
             raise error.APIConnectionError(
                 'Unrecognized HTTP method %r.  This may indicate a bug in the '
