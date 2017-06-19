@@ -2,11 +2,11 @@
 import sys
 
 
-class SVBError(Exception):
+class SvbError(Exception):
 
     def __init__(self, message=None, http_body=None, http_status=None,
                  json_body=None, headers=None):
-        super(SVBError, self).__init__(message)
+        super(SvbError, self).__init__(message)
 
         if http_body and hasattr(http_body, 'decode'):
             try:
@@ -37,15 +37,15 @@ class SVBError(Exception):
             return unicode(self).encode('utf-8')
 
 
-class APIError(SVBError):
+class APIError(SvbError):
     pass
 
 
-class APIConnectionError(SVBError):
+class APIConnectionError(SvbError):
     pass
 
 
-class CardError(SVBError):
+class CardError(SvbError):
 
     def __init__(self, message, param, code, http_body=None,
                  http_status=None, json_body=None, headers=None):
@@ -56,7 +56,7 @@ class CardError(SVBError):
         self.code = code
 
 
-class InvalidRequestError(SVBError):
+class InvalidRequestError(SvbError):
 
     def __init__(self, message, param, http_body=None,
                  http_status=None, json_body=None, headers=None):
@@ -66,19 +66,19 @@ class InvalidRequestError(SVBError):
         self.param = param
 
 
-class AuthenticationError(SVBError):
+class AuthenticationError(SvbError):
     pass
 
 
-class PermissionError(SVBError):
+class PermissionError(SvbError):
     pass
 
 
-class RateLimitError(SVBError):
+class RateLimitError(SvbError):
     pass
 
 
-class OAuthError(SVBError):
+class OAuthError(SvbError):
     def __init__(self, type, description=None, http_body=None,
                  http_status=None, json_body=None, headers=None):
         description = description or type
@@ -87,7 +87,7 @@ class OAuthError(SVBError):
         self.type = type
 
 
-class SignatureVerificationError(SVBError):
+class SignatureVerificationError(SvbError):
     def __init__(self, message, sig_header, http_body=None):
         super(SignatureVerificationError, self).__init__(
             message, http_body)

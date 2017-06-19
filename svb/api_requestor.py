@@ -10,7 +10,7 @@ import svb
 from svb import error, http_client, version, util
 from svb.multipart_data_generator import MultipartDataGenerator
 from svb.six import b, iteritems
-from svb.six.moves.urllib.parse import urlencode, urlparse, urlsplit
+from svb.six.moves.urllib.parse import urlencode, urlparse, urlsplit, urlunsplit
 
 
 def _encode_datetime(dttime):
@@ -24,7 +24,7 @@ def _encode_datetime(dttime):
 
 def _encode_nested_dict(key, data, fmt='%s[%s]'):
     d = {}
-    for subkey, subvalue in data.iteritems():
+    for subkey, subvalue in iteritems(data):
         d[fmt % (key, subkey)] = subvalue
     return d
 
@@ -60,7 +60,7 @@ def _build_api_url(url, query):
     if base_query:
         query = '%s&%s' % (base_query, query)
 
-    return urlparse.urlunsplit((scheme, netloc, path, query, fragment))
+    return urlunsplit((scheme, netloc, path, query, fragment))
 
 
 class APIRequestor(object):
@@ -178,7 +178,7 @@ class APIRequestor(object):
             headers['Content-Type'] = 'application/json'
 
         if self.api_version is not None:
-            headers['Svb-Version'] = self.api_version
+            headers['SVB-Version'] = self.api_version
 
         return headers
 
@@ -219,7 +219,9 @@ class APIRequestor(object):
                 supplied_headers["Content-Type"] = \
                     "multipart/form-data; boundary=%s" % (generator.boundary,)
             else:
-                post_data = util.json.dumps({"data": params})
+                post_data = util.json.dumps({
+                                              "data": dict(_api_encode(params))
+                                            })
         else:
             raise error.APIConnectionError(
                 'Unrecognized HTTP method %r.  This may indicate a bug in the '

@@ -6,6 +6,7 @@ import email
 
 from svb import error, util
 from svb.six import iteritems, string_types
+from svb.six.moves import urllib
 
 # - Requests is the preferred HTTP library
 # - Google App Engine has urlfetch
@@ -233,7 +234,7 @@ class PycurlClient(HTTPClient):
             # now that we have the parser, get the proxy url pieces
             proxy = self._proxy
             for scheme in proxy:
-                proxy[scheme] = url.urlparse.urlparse(proxy[scheme])
+                proxy[scheme] = urllib.parse.urlparse(proxy[scheme])
 
     def parse_headers(self, data):
         if '\r\n' not in data:

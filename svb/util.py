@@ -5,6 +5,7 @@ import io
 import logging
 import sys
 import os
+import time
 import re
 
 import svb
@@ -93,6 +94,10 @@ def _console_log_level():
         return None
 
 
+def seconds_from_epoch(dt):
+    return time.mktime(dt.timetuple())
+
+
 def log_debug(message, **params):
     msg = logfmt(dict(message=message, **params))
     if _console_log_level() == 'debug':
@@ -114,6 +119,10 @@ def _test_or_live_environment():
     if match is None:
         return
     return match.groups()[0]
+
+
+def dashboard_link(request_id):
+    return 'http://docs.svbplatform.com/'
 
 
 def logfmt(props):

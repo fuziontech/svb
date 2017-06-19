@@ -52,7 +52,7 @@ from svb.error import (  # noqa
     CardError,
     InvalidRequestError,
     SignatureVerificationError,
-    SVBError)
+    SvbError)
 
 # Sets some basic information about the running application that's sent along
 # with API requests. Useful for plugin authors to identify their plugin when
